@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VISTA CONTABIL | Enterprise Management</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Vista Contábil">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2641/2641040.png">
+    <link rel="manifest" href="data:application/json;base64,ewogICJkZWZhdWx0X2xvY2FsZSI6ICJwdC1iciIsCiAgIm5hbWUiOiAiVmlzdGEgQ29udMOhYmlsIiwKICAic2hvcnRfbmFtZSI6ICJWaXN0YSIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBhMGYxZCIsCiAgInRoZW1lX2NvbG9yIjogIiM2MzY2ZjEiLAogICJpY29ucyI6IFt7InNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yNjQxLzI2NDEwNDAucG5nIiwic2l6ZXMiOiAiNTEyeDUxMiIsInR5cGUiOiAiaW1hZ2UvcG5nIn1dCn0=">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
@@ -19,7 +27,7 @@
         .input-standard:focus { border-color: var(--accent); outline: none; }
         .loading-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .password-hide { font-family: 'text-security-disc'; -webkit-text-security: disc; }
+        .password-hide { -webkit-text-security: disc; }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -36,8 +44,15 @@
             <button onclick="router('clientes')" id="nav-clientes" class="w-full flex items-center gap-3 px-5 py-3 rounded-lg text-slate-400 font-medium hover:text-white transition-all text-sm"><i class="fas fa-building w-5"></i> Clientes</button>
             <button onclick="router('busca')" id="nav-busca" class="w-full flex items-center gap-3 px-5 py-3 rounded-lg text-slate-400 font-medium hover:text-white transition-all text-sm"><i class="fas fa-search w-5"></i> Busca Global</button>
         </nav>
-        <div class="p-4 border-t border-white/5">
-            <button onclick="exportarBackup()" class="w-full text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-widest"><i class="fas fa-download mr-2"></i> Download Backup</button>
+        
+        <div class="p-4 border-t border-white/5 space-y-2">
+            <button onclick="exportarBackup()" class="w-full text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-widest py-2">
+                <i class="fas fa-download mr-2"></i> Download Backup
+            </button>
+            <label class="w-full flex items-center justify-center text-[10px] text-indigo-400 hover:text-white uppercase font-bold tracking-widest py-2 cursor-pointer border border-indigo-500/20 rounded-lg">
+                <i class="fas fa-upload mr-2"></i> Importar Backup
+                <input type="file" id="input-import" class="hidden" accept=".json" onchange="importarBackup(this)">
+            </label>
         </div>
     </aside>
 
@@ -60,7 +75,7 @@
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-2xl font-bold text-white">Gestão de Clientes</h2>
                 <div class="flex gap-2">
-                    <button onclick="gerarRelatorioClientes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg"><i class="fas fa-file-pdf mr-2"></i> Relatório</button>
+                    <button onclick="gerarRelatorioClientes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all"><i class="fas fa-file-pdf mr-2"></i> Relatório</button>
                     <button onclick="abrirModalCadastro()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg">+ Novo Cliente</button>
                 </div>
             </div>
@@ -86,7 +101,7 @@
             <h2 class="text-2xl font-bold text-white mb-8">Busca Inteligente</h2>
             <div class="input-standard p-1 rounded-xl mb-8 flex items-center gap-3 px-4 border-2 border-indigo-500/20">
                 <i class="fas fa-search text-indigo-500"></i>
-                <input type="text" id="input-busca-global" onkeyup="executarBuscaGlobal()" placeholder="Digite o nome de um arquivo ou documento..." class="w-full py-3 bg-transparent outline-none text-sm">
+                <input type="text" id="input-busca-global" onkeyup="executarBuscaGlobal()" placeholder="Digite o nome de um arquivo para localizar..." class="w-full py-3 bg-transparent outline-none text-sm">
             </div>
             <div id="resultados-busca" class="grid grid-cols-1 gap-4"></div>
         </section>
@@ -124,29 +139,26 @@
             </div>
             <form id="form-cliente" class="p-8 space-y-4">
                 <input type="hidden" id="field-id">
-                <div class="grid grid-cols-1 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">CNPJ (Consulta Automática)</label>
-                        <div class="flex gap-2 mt-1">
-                            <input type="text" id="f-cnpj" maxlength="18" oninput="mascaraCNPJ(this)" placeholder="00.000.000/0000-00" class="flex-1 input-standard rounded-lg px-4 py-2.5 text-sm" required>
-                            <button type="button" onclick="consultarCNPJ()" id="btn-consulta" class="bg-slate-700 hover:bg-indigo-600 text-white px-4 rounded-lg transition-all"><i class="fas fa-search"></i></button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">Razão Social</label>
-                        <input type="text" id="f-nome" class="w-full input-standard rounded-lg px-4 py-2.5 text-sm mt-1" required>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">CNPJ</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" id="f-cnpj" maxlength="18" oninput="mascaraCNPJ(this)" placeholder="00.000.000/0000-00" class="flex-1 input-standard rounded-lg px-4 py-2.5 text-sm" required>
+                        <button type="button" onclick="consultarCNPJ()" id="btn-consulta" class="bg-slate-700 hover:bg-indigo-600 text-white px-4 rounded-lg"><i class="fas fa-search"></i></button>
                     </div>
                 </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Razão Social</label>
+                    <input type="text" id="f-nome" class="w-full input-standard rounded-lg px-4 py-2.5 text-sm mt-1" required>
+                </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="f-ie" placeholder="Insc. Estadual" class="input-standard rounded-lg px-4 py-2.5 text-sm">
                     <input type="text" id="f-s-pref" placeholder="Senha Pref." class="input-standard rounded-lg px-4 py-2.5 text-sm">
                     <input type="text" id="f-s-simp" placeholder="Senha Simples" class="input-standard rounded-lg px-4 py-2.5 text-sm">
                     <input type="text" id="f-s-seg" placeholder="Senha Seguro" class="input-standard rounded-lg px-4 py-2.5 text-sm">
-                    <input type="text" id="f-a1" placeholder="Certificado A1" class="col-span-2 input-standard rounded-lg px-4 py-2.5 text-sm">
+                    <input type="text" id="f-a1" placeholder="Certificado A1" class="input-standard rounded-lg px-4 py-2.5 text-sm">
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-bold text-sm">Salvar Registro</button>
-                    <button type="button" id="btn-deletar-c" class="hidden px-5 bg-red-600/10 text-red-500 rounded-lg font-bold text-sm hover:bg-red-600 hover:text-white transition-all">Excluir</button>
+                    <button type="button" id="btn-deletar-c" class="hidden px-5 bg-red-600/10 text-red-500 rounded-lg font-bold text-sm hover:bg-red-600 hover:text-white">Excluir</button>
                 </div>
             </form>
         </div>
@@ -165,17 +177,14 @@
         };
         req.onsuccess = (e) => { db = e.target.result; router('dashboard'); };
 
-        // --- NAVEGAÇÃO ---
         function router(view) {
             document.querySelectorAll('.content-view').forEach(v => v.classList.add('hidden'));
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('sidebar-active'));
             document.getElementById('view-' + view).classList.remove('hidden');
             const btn = document.getElementById('nav-' + view);
             if(btn) btn.classList.add('sidebar-active');
-            
             if(view === 'clientes') carregarClientes();
             if(view === 'dashboard') atualizarDash();
-            if(view === 'busca') document.getElementById('input-busca-global').focus();
         }
 
         function toggleModal(id, show) { document.getElementById(id).classList.toggle('hidden', !show); }
@@ -202,25 +211,7 @@
             `).join('');
         }
 
-        // --- CNPJ API ---
-        async function consultarCNPJ() {
-            const cnpj = document.getElementById('f-cnpj').value.replace(/\D/g, "");
-            if (cnpj.length !== 14) return alert("Digite um CNPJ válido.");
-            const btn = document.getElementById('btn-consulta');
-            const icon = btn.querySelector('i');
-            icon.className = "fas fa-spinner loading-spin";
-            const script = document.createElement('script');
-            script.src = `https://receitaws.com.br/v1/cnpj/${cnpj}?callback=handleCNPJResponse`;
-            document.body.appendChild(script);
-        }
-
-        window.handleCNPJResponse = function(data) {
-            document.getElementById('btn-consulta').querySelector('i').className = "fas fa-search";
-            if (data.status === "OK") document.getElementById('f-nome').value = data.nome;
-            else alert("Erro na consulta.");
-        };
-
-        // --- DETALHES E SEGURANÇA ---
+        // --- DETALHES ---
         let clienteAtivo = null;
         function abrirDetalhes(id) {
             clienteAtivo = window.clientes.find(x => x.id === id);
@@ -229,42 +220,27 @@
             router('detalhes');
         }
 
-        function toggleSeguranca() {
-            segurancaAtiva = !segurancaAtiva;
-            renderizarPainelInfo();
-        }
+        function toggleSeguranca() { segurancaAtiva = !segurancaAtiva; renderizarPainelInfo(); }
 
         function renderizarPainelInfo() {
             const c = clienteAtivo;
             const eyeIcon = segurancaAtiva ? 'fa-eye-slash' : 'fa-eye';
             const passClass = segurancaAtiva ? 'password-hide' : '';
-            
             document.getElementById('painel-info-cliente').innerHTML = `
                 <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 class="text-3xl font-extrabold text-white mb-2">${c.nome}</h2>
-                        <span class="text-xs bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded font-mono border border-indigo-500/20">${c.cnpj}</span>
-                    </div>
-                    <button onclick="toggleSeguranca()" class="bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-white/10 text-slate-400">
-                        <i class="fas ${eyeIcon}"></i>
-                    </button>
+                    <div><h2 class="text-3xl font-extrabold text-white mb-2">${c.nome}</h2><span class="text-xs bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded font-mono border border-indigo-500/20">${c.cnpj}</span></div>
+                    <button onclick="toggleSeguranca()" class="bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-white/10 text-slate-400"><i class="fas ${eyeIcon}"></i></button>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="p-4 bg-black/20 rounded-xl border border-white/5"><p class="text-[9px] font-bold text-slate-500 uppercase">Prefeitura</p><p class="text-sm font-bold text-white ${passClass}">${c.s_pref || '---'}</p></div>
                     <div class="p-4 bg-black/20 rounded-xl border border-white/5"><p class="text-[9px] font-bold text-slate-500 uppercase">Simples</p><p class="text-sm font-bold text-white ${passClass}">${c.s_simp || '---'}</p></div>
                     <div class="p-4 bg-black/20 rounded-xl border border-white/5"><p class="text-[9px] font-bold text-slate-500 uppercase">Seguro</p><p class="text-sm font-bold text-white ${passClass}">${c.s_seg || '---'}</p></div>
                     <div class="p-4 bg-black/20 rounded-xl border border-white/5"><p class="text-[9px] font-bold text-slate-500 uppercase">A1</p><p class="text-xs font-bold text-white truncate ${passClass}">${c.a1 || '---'}</p></div>
-                </div>
-            `;
+                </div>`;
         }
 
         // --- PASTAS E ARQUIVOS ---
         let pastaAtivaId = null;
-
-        function promptNovaPasta() {
-            const n = prompt("Nome da Pasta:");
-            if(n) { db.transaction("pastas", "readwrite").objectStore("pastas").add({ clienteId: clienteAtivo.id, nome: n }); carregarPastasGrid(); }
-        }
 
         function carregarPastasGrid() {
             db.transaction("pastas").objectStore("pastas").getAll().onsuccess = (e) => {
@@ -275,12 +251,11 @@
                             <i class="fas fa-folder text-indigo-500 text-3xl mb-3"></i>
                             <span class="font-bold text-white uppercase text-[9px] text-center">${p.nome}</span>
                         </div>
-                        <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100">
+                        <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                              <button onclick="renomearPasta(${p.id}, '${p.nome}')" class="text-slate-500 hover:text-white"><i class="fas fa-edit text-[10px]"></i></button>
-                             <button onclick="if(confirm('Excluir pasta?')) { db.transaction('pastas','readwrite').objectStore('pastas').delete(${p.id}); carregarPastasGrid(); }" class="text-slate-500 hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
+                             <button onclick="if(confirm('Excluir?')) { db.transaction('pastas','readwrite').objectStore('pastas').delete(${p.id}); carregarPastasGrid(); }" class="text-slate-500 hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
                         </div>
-                    </div>
-                `).join('');
+                    </div>`).join('');
             };
         }
 
@@ -293,12 +268,8 @@
 
         function fazerUpload(input) {
             const f = input.files[0]; if(!f) return;
-            const bar = document.getElementById('barra-progresso');
-            const cont = document.getElementById('container-progresso');
-            
-            cont.classList.remove('hidden');
-            bar.style.width = '0%';
-
+            const bar = document.getElementById('barra-progresso'), cont = document.getElementById('container-progresso');
+            cont.classList.remove('hidden'); bar.style.width = '0%';
             const r = new FileReader();
             r.onprogress = (e) => { if(e.lengthComputable) bar.style.width = (e.loaded/e.total)*100 + '%'; };
             r.onload = () => {
@@ -320,8 +291,7 @@
                         <i class="fas fa-file-pdf text-red-500/80 text-2xl mb-2"></i>
                         <span class="text-[8px] font-bold text-slate-500 text-center truncate w-full mb-3 uppercase">${a.nome}</span>
                         <button onclick="abrirArquivo(${a.id})" class="w-full bg-indigo-600/10 text-indigo-400 py-2 rounded text-[9px] font-bold hover:bg-indigo-600 hover:text-white transition-all">ABRIR</button>
-                    </div>
-                `).join('');
+                    </div>`).join('');
             };
         }
 
@@ -330,144 +300,64 @@
             const t = document.getElementById('input-busca-global').value.toLowerCase();
             const cont = document.getElementById('resultados-busca');
             if(t.length < 2) return cont.innerHTML = "";
-
             const [arqs, psts, clis] = await Promise.all([
                 promisifyRequest(db.transaction("arquivos").objectStore("arquivos").getAll()),
                 promisifyRequest(db.transaction("pastas").objectStore("pastas").getAll()),
                 promisifyRequest(db.transaction("clientes").objectStore("clientes").getAll())
             ]);
-
             const res = arqs.filter(a => a.nome.toLowerCase().includes(t));
             cont.innerHTML = res.map(a => {
-                const p = psts.find(x => x.id === a.pastaId);
-                const c = clis.find(x => x.id === (p ? p.clienteId : null));
-                return `
-                    <div class="card-premium p-4 rounded-xl flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <i class="fas fa-file-pdf text-red-500"></i>
-                            <div>
-                                <h4 class="text-white font-bold text-sm">${a.nome}</h4>
-                                <p class="text-[10px] text-slate-500 uppercase">${c ? c.nome : '?'} > ${p ? p.nome : '?'}</p>
-                            </div>
-                        </div>
-                        <button onclick="abrirArquivo(${a.id})" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-xs font-bold">VER</button>
-                    </div>
-                `;
+                const p = psts.find(x => x.id === a.pastaId), c = clis.find(x => x.id === (p ? p.clienteId : null));
+                return `<div class="card-premium p-4 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center gap-4"><i class="fas fa-file-pdf text-red-500"></i><div><h4 class="text-white font-bold text-sm">${a.nome}</h4><p class="text-[10px] text-slate-500 uppercase">${c ? c.nome : '?'} > ${p ? p.nome : '?'}</p></div></div>
+                    <button onclick="abrirArquivo(${a.id})" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-xs font-bold">VER</button>
+                </div>`;
             }).join('');
         }
 
-        // --- RELATÓRIOS E BACKUP ---
-        async function gerarRelatorioClientes() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            const clis = await promisifyRequest(db.transaction("clientes").objectStore("clientes").getAll());
-            
-            doc.text("LISTA DE ACESSOS - VISTA CONTABIL", 14, 15);
-            doc.autoTable({
-                startY: 20,
-                head: [['Empresa', 'CNPJ', 'Pref.', 'Simples', 'Seguro', 'A1']],
-                body: clis.map(c => [c.nome, c.cnpj, c.s_pref, c.s_simp, c.s_seg, c.a1]),
-                theme: 'grid',
-                styles: { fontSize: 7 }
-            });
-            doc.save("relatorio_vista.pdf");
-        }
-
+        // --- BACKUP E PDF ---
         async function exportarBackup() {
             const backup = {};
             for (const s of ["clientes", "pastas", "arquivos"]) backup[s] = await promisifyRequest(db.transaction(s).objectStore(s).getAll());
-            const blob = new Blob([JSON.stringify(backup)], {type: "application/json"});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(backup)], {type: "application/json"}));
             a.download = `backup_vista_${new Date().getTime()}.json`; a.click();
         }
 
-        // --- HELPERS ---
-        function promisifyRequest(r) { return new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
-        
-        function mascaraCNPJ(i) {
-            let v = i.value.replace(/\D/g, "");
-            v = v.replace(/^(\d{2})(\d)/, "$1.$2");
-            v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
-            v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
-            v = v.replace(/(\d{4})(\d)/, "$1-$2");
-            i.value = v;
-        }
-
-        function abrirArquivo(id) {
-            db.transaction("arquivos").objectStore("arquivos").get(id).onsuccess = (e) => {
-                const a = e.target.result;
-                const url = URL.createObjectURL(new Blob([a.data], { type: a.tipo }));
-                window.open(url, '_blank');
-            };
-        }
-
-        function renomearPasta(id, antigo) {
-            const n = prompt("Novo nome:", antigo);
-            if(n) { 
-                const tx = db.transaction("pastas", "readwrite");
-                const s = tx.objectStore("pastas");
-                s.get(id).onsuccess = (e) => { const d = e.target.result; d.nome = n; s.put(d); carregarPastasGrid(); };
-            }
-        }
-
-        function renomearArquivo(id, antigo) {
-            const n = prompt("Novo nome:", antigo);
-            if(n) { 
-                const tx = db.transaction("arquivos", "readwrite");
-                const s = tx.objectStore("arquivos");
-                s.get(id).onsuccess = (e) => { const d = e.target.result; d.nome = n; s.put(d); carregarArquivosGrid(); };
-            }
-        }
-
-        function abrirModalCadastro() {
-            document.getElementById('form-cliente').reset();
-            document.getElementById('field-id').value = "";
-            document.getElementById('btn-deletar-c').classList.add('hidden');
-            toggleModal('modal-cliente', true);
-        }
-
-        document.getElementById('form-cliente').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const id = document.getElementById('field-id').value;
-            const c = {
-                nome: document.getElementById('f-nome').value,
-                cnpj: document.getElementById('f-cnpj').value,
-                ie: document.getElementById('f-ie').value,
-                s_pref: document.getElementById('f-s-pref').value,
-                s_simp: document.getElementById('f-s-simp').value,
-                s_seg: document.getElementById('f-s-seg').value,
-                a1: document.getElementById('f-a1').value
-            };
-            const tx = db.transaction("clientes", "readwrite");
-            if(id) { c.id = Number(id); tx.objectStore("clientes").put(c); }
-            else { tx.objectStore("clientes").add(c); }
-            tx.oncomplete = () => { toggleModal('modal-cliente', false); carregarClientes(); };
-        });
-
-        function editarCliente(id) {
-            const c = window.clientes.find(x => x.id === id);
-            document.getElementById('field-id').value = c.id;
-            document.getElementById('f-nome').value = c.nome;
-            document.getElementById('f-cnpj').value = c.cnpj;
-            document.getElementById('f-ie').value = c.ie || '';
-            document.getElementById('f-s-pref').value = c.s_pref || '';
-            document.getElementById('f-s-simp').value = c.s_simp || '';
-            document.getElementById('f-s-seg').value = c.s_seg || '';
-            document.getElementById('f-a1').value = c.a1 || '';
-            document.getElementById('btn-deletar-c').classList.remove('hidden');
-            document.getElementById('btn-deletar-c').onclick = () => {
-                if(confirm("Excluir empresa?")) {
-                    db.transaction("clientes", "readwrite").objectStore("clientes").delete(id);
-                    toggleModal('modal-cliente', false); carregarClientes();
+        async function importarBackup(input) {
+            const f = input.files[0]; if(!f || !confirm("Isso apagará os dados atuais. Continuar?")) return;
+            const r = new FileReader();
+            r.onload = async (e) => {
+                const d = JSON.parse(e.target.result);
+                for(const t of ["clientes", "pastas", "arquivos"]) {
+                    const tx = db.transaction(t, "readwrite"); tx.objectStore(t).clear();
+                    if(d[t]) d[t].forEach(item => db.transaction(t, "readwrite").objectStore(t).add(item));
                 }
+                alert("Importado!"); window.location.reload();
             };
-            toggleModal('modal-cliente', true);
+            r.readAsText(f);
         }
 
-        function atualizarDash() {
-            db.transaction("clientes").objectStore("clientes").count().onsuccess = (e) => document.getElementById('dash-clientes').innerText = e.target.result;
-            db.transaction("arquivos").objectStore("arquivos").count().onsuccess = (e) => document.getElementById('dash-arquivos').innerText = e.target.result;
+        async function gerarRelatorioClientes() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4');
+            const clis = await promisifyRequest(db.transaction("clientes").objectStore("clientes").getAll());
+            doc.text("RELATORIO ACESSOS", 14, 15);
+            doc.autoTable({ startY: 20, head: [['Empresa', 'CNPJ', 'Pref', 'Simp', 'Seg', 'A1']], body: clis.map(c => [c.nome, c.cnpj, c.s_pref, c.s_simp, c.s_seg, c.a1]) });
+            doc.save("relatorio.pdf");
         }
+
+        // --- AUXILIARES ---
+        function promisifyRequest(r) { return new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+        function mascaraCNPJ(i) { i.value = i.value.replace(/\D/g, "").replace(/^(\d{2})(\d)/, "$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1/$2").replace(/(\d{4})(\d)/, "$1-$2"); }
+        function abrirArquivo(id) { db.transaction("arquivos").objectStore("arquivos").get(id).onsuccess = (e) => { const a = e.target.result; window.open(URL.createObjectURL(new Blob([a.data], { type: a.tipo })), '_blank'); }; }
+        function promptNovaPasta() { const n = prompt("Nome da Pasta:"); if(n) { db.transaction("pastas", "readwrite").objectStore("pastas").add({ clienteId: clienteAtivo.id, nome: n }); carregarPastasGrid(); } }
+        function renomearPasta(id, old) { const n = prompt("Novo nome:", old); if(n) { const s = db.transaction("pastas", "readwrite").objectStore("pastas"); s.get(id).onsuccess = (e) => { const d = e.target.result; d.nome = n; s.put(d); carregarPastasGrid(); }; } }
+        function renomearArquivo(id, old) { const n = prompt("Novo nome:", old); if(n) { const s = db.transaction("arquivos", "readwrite").objectStore("arquivos"); s.get(id).onsuccess = (e) => { const d = e.target.result; d.nome = n; s.put(d); carregarArquivosGrid(); }; } }
+        function abrirModalCadastro() { document.getElementById('form-cliente').reset(); document.getElementById('field-id').value = ""; document.getElementById('btn-deletar-c').classList.add('hidden'); toggleModal('modal-cliente', true); }
+        function editarCliente(id) { const c = window.clientes.find(x => x.id === id); document.getElementById('field-id').value = c.id; document.getElementById('f-nome').value = c.nome; document.getElementById('f-cnpj').value = c.cnpj; document.getElementById('f-s-pref').value = c.s_pref || ''; document.getElementById('f-s-simp').value = c.s_simp || ''; document.getElementById('f-s-seg').value = c.s_seg || ''; document.getElementById('f-a1').value = c.a1 || ''; document.getElementById('btn-deletar-c').classList.remove('hidden'); document.getElementById('btn-deletar-c').onclick = () => { if(confirm("Excluir?")) { db.transaction("clientes", "readwrite").objectStore("clientes").delete(id); toggleModal('modal-cliente', false); carregarClientes(); } }; toggleModal('modal-cliente', true); }
+        document.getElementById('form-cliente').addEventListener('submit', (e) => { e.preventDefault(); const id = document.getElementById('field-id').value, c = { nome: document.getElementById('f-nome').value, cnpj: document.getElementById('f-cnpj').value, s_pref: document.getElementById('f-s-pref').value, s_simp: document.getElementById('f-s-simp').value, s_seg: document.getElementById('f-s-seg').value, a1: document.getElementById('f-a1').value }; const tx = db.transaction("clientes", "readwrite"); if(id) { c.id = Number(id); tx.objectStore("clientes").put(c); } else tx.objectStore("clientes").add(c); tx.oncomplete = () => { toggleModal('modal-cliente', false); carregarClientes(); }; });
+        function atualizarDash() { db.transaction("clientes").objectStore("clientes").count().onsuccess = (e) => document.getElementById('dash-clientes').innerText = e.target.result; db.transaction("arquivos").objectStore("arquivos").count().onsuccess = (e) => document.getElementById('dash-arquivos').innerText = e.target.result; }
+        async function consultarCNPJ() { const cnpj = document.getElementById('f-cnpj').value.replace(/\D/g, ""); if (cnpj.length !== 14) return; document.getElementById('btn-consulta').innerHTML = '<i class="fas fa-spinner loading-spin"></i>'; const script = document.createElement('script'); script.src = `https://receitaws.com.br/v1/cnpj/${cnpj}?callback=handleCNPJResponse`; document.body.appendChild(script); }
+        window.handleCNPJResponse = function(d) { document.getElementById('btn-consulta').innerHTML = '<i class="fas fa-search"></i>'; if (d.status === "OK") document.getElementById('f-nome').value = d.nome; };
     </script>
 </body>
 </html>
